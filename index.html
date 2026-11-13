@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#16110D">
+<title>AI for Beginners &mdash; How a machine learns from its teacher: the true story of Queen</title>
+<meta name="description" content="A free illustrated book for complete beginners: what an AI language model is, how a student AI (Qwen) learns from a teacher AI (Claude), and what fine-tuning, LoRA and QLoRA mean, told through one true story with real numbers.">
+<meta name="author" content="Marko Bosko (Mantra Productions)">
+<link rel="canonical" href="https://ai-for-beginners-book.pages.dev/">
+<meta property="og:site_name" content="AI for Beginners">
+<meta property="og:title" content="AI for Beginners">
+<meta property="og:description" content="A free illustrated book for complete beginners: what an AI language model is, how a student AI (Qwen) learns from a teacher AI (Claude), and what fine-tuning, LoRA and QLoRA mean, told through one true story with real numbers.">
+<meta property="og:type" content="book">
+<meta property="og:url" content="https://ai-for-beginners-book.pages.dev/">
+<meta property="og:image" content="https://ai-for-beginners-book.pages.dev/img/cover.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..700&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M8 27 22 5l3 2-14 22z' fill='%23E8A64B'/><path d='M8 27l-1 3 3-1z' fill='%23E2D0B5'/></svg>">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Book", "name": "AI for Beginners", "alternativeHeadline": "How a machine learns from its teacher: the true story of Queen", "author": {"@type": "Person", "name": "Marko Bosko (Mantra Productions)"}, "inLanguage": "en", "isAccessibleForFree": true, "url": "https://ai-for-beginners-book.pages.dev/", "datePublished": "2026-11-13"}</script>
+<style>:root{
+  color-scheme:dark;
+  /* night palette — warm, low-glare, nothing pure black or pure white */
+  --paper:#16110D; --paper-2:#1E1811; --paper-3:#271F16; --paper-4:#100C09;
+  --ink:#E2D0B5; --ink-2:#AF9C82; --ink-3:#87755F;
+  --edge:#4B3B2C; --rule:#382C21; --rule-soft:#2A2119;
+  --blue:#93B4C4; --sage:#9AA88A;
+  --flame:#E8A64B; --flame-2:#C46B41;
+  --tab-1:#C9A46B; --tab-6:#9A4A2A;
+  --shadow:0 12px 34px -18px #000;
+  --measure:37rem;
+  --display:'Fraunces',Georgia,serif;
+  --body:'Newsreader',Georgia,serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; background:var(--paper); scroll-behavior:smooth}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--body); font-size:19px; line-height:1.7;
+  font-variant-numeric:oldstyle-nums;
+}
+body::before{ /* the lamp's glow, low in the page */
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:radial-gradient(60rem 40rem at 50% -6rem, rgba(232,166,75,.09), transparent 70%);
+}
+body::after{ /* paper grain, barely there */
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  opacity:.16; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E");
+}
+.wrap{position:relative; z-index:1; max-width:78rem; margin:0 auto; padding:0 1.25rem 5rem}
+::selection{background:rgba(232,166,75,.28)}
+
+/* ---------- masthead ---------- */
+.masthead{padding:1.6rem 0 2rem; text-align:center}
+.hero-lamp{width:min(100%,44rem); margin:0 auto .4rem}
+.hero-lamp img{
+  display:block; width:100%; height:auto;
+  -webkit-mask-image:radial-gradient(ellipse 62% 60% at 50% 48%, #000 40%, transparent 78%);
+  mask-image:radial-gradient(ellipse 62% 60% at 50% 48%, #000 40%, transparent 78%);
+}
+.eyebrow{
+  font-family:var(--mono); font-size:.66rem; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--ink-3); margin:0 0 1rem;
+}
+.masthead h1{
+  font-family:var(--display); font-optical-sizing:auto;
+  font-variation-settings:'SOFT' 40,'WONK' 1;
+  font-weight:500; font-size:clamp(2.7rem,9.4vw,6rem); line-height:.94;
+  margin:0; letter-spacing:-.02em; color:#EFE0C6;
+}
+.masthead h1 em{
+  display:block; font-style:italic; font-weight:400;
+  color:var(--flame); font-size:.5em; letter-spacing:0; margin-top:.34em;
+}
+.masthead p.sub{
+  max-width:31rem; margin:1.4rem auto 0; color:var(--ink-2);
+  font-size:1.03rem; font-style:italic;
+}
+.byline{font-family:var(--mono); font-size:.68rem; letter-spacing:.13em; color:var(--ink-3);
+  text-transform:uppercase; margin-top:1.4rem; line-height:1.9}
+
+.masthead.compact{padding:1.9rem 0 1.5rem; text-align:center}
+.masthead.compact .home{
+  font-family:var(--mono); font-size:.72rem; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--ink-3); text-decoration:none; display:inline-flex; align-items:center; gap:.6rem;
+  padding:.5rem .2rem;
+}
+.masthead.compact .home:hover{color:var(--flame)}
+.masthead.compact .lamp{color:var(--flame); font-size:.95rem}
+
+/* ---------- the drawer: table of contents ---------- */
+.toc{
+  border:1.5px solid var(--edge); border-radius:.9rem; background:var(--paper-2);
+  box-shadow:var(--shadow); overflow:hidden; margin:2.4rem auto 0; max-width:44rem;
+  scroll-margin-top:1rem;
+}
+.toc h2{
+  font-family:var(--mono); font-size:.68rem; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--flame); font-weight:500; margin:0; padding:1.15rem 1.4rem .9rem;
+  border-bottom:1px solid var(--rule); text-align:center;
+}
+.toc-row{
+  display:flex; gap:.95rem; align-items:baseline; text-decoration:none; color:inherit;
+  padding:.85rem 1.4rem .85rem 1.1rem; border-bottom:1px solid var(--rule-soft);
+  border-left:4px solid var(--bg); transition:background .16s ease;
+}
+.toc-row:last-child{border-bottom:none}
+.toc-row:hover{background:rgba(232,166,75,.09)}
+.toc-row:hover .t{color:var(--flame)}
+.toc-row:focus-visible{outline:2px solid var(--flame); outline-offset:-3px}
+.toc-row .n{font-family:var(--mono); font-size:.72rem; color:var(--bg); flex:0 0 1.4rem}
+.toc-row .t{font-weight:600; color:#EFE0C6; flex:0 0 9rem}
+.toc-row .d{color:var(--ink-2); font-size:.9rem; flex:1; line-height:1.5}
+@media (max-width:600px){
+  .toc-row{flex-wrap:wrap; gap:.3rem .95rem; padding:.85rem 1rem .9rem .85rem}
+  .toc-row .t{flex:1 0 auto}
+  .toc-row .d{flex:1 0 100%; padding-left:2.35rem; font-size:.87rem}
+}
+
+/* ---------- back to contents ---------- */
+.up{
+  position:absolute; top:-.35rem; right:0; line-height:0;
+  padding:.5rem; border-radius:.5rem; transition:transform .2s ease, opacity .2s ease;
+  opacity:.62;
+}
+.up img{width:26px; height:auto; display:block}
+.up:hover{opacity:1; transform:translateY(-4px)}
+.up:focus-visible{outline:2px solid var(--flame); outline-offset:2px; opacity:1}
+.up-end{
+  position:static; display:block; width:max-content; margin:2.6rem auto 0;
+  opacity:.7; padding:.7rem;
+}
+.up-end img{width:34px}
+@media (min-width:781px){ .up img{width:32px} }
+
+.book{margin-top:2.6rem}
+.folder{
+  position:relative; border:1.5px solid var(--edge); border-radius:.9rem;
+  scroll-margin-top:.9rem; margin-bottom:2.2rem;
+  background:var(--paper-2); box-shadow:var(--shadow);
+  padding:clamp(1.9rem,4.5vw,3.6rem) clamp(1.1rem,4vw,3.4rem) 3.4rem;
+  overflow:hidden;
+}
+.folder::before{ /* the open tab's colour carried into the folder */
+  content:""; position:absolute; top:0; left:0; right:0; height:4px;
+  background:var(--active,var(--tab-1)); opacity:.9;
+}
+
+
+/* ---------- chapter typography ---------- */
+.chapter{max-width:var(--measure); margin:0 auto}
+.chapter > *{max-width:var(--measure)}
+.ch-head{position:relative; margin:0 0 2.4rem; text-align:center; max-width:none;
+  padding-top:.2rem}
+.ch-kicker{
+  font-family:var(--mono); font-size:.68rem; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--flame); opacity:.75; margin:0 0 .9rem;
+}
+.ch-head h2{
+  font-family:var(--display); font-variation-settings:'SOFT' 40,'WONK' 1;
+  font-weight:500; font-size:clamp(2rem,5.6vw,3.4rem); line-height:1.04;
+  margin:0; letter-spacing:-.018em; color:#EFE0C6;
+}
+.ch-head .dek{
+  font-style:italic; color:var(--ink-2); margin:1rem auto 0; max-width:30rem; font-size:1.04rem;
+}
+.chapter h3{
+  font-family:var(--display); font-variation-settings:'SOFT' 30,'WONK' 1;
+  font-weight:500; font-size:1.6rem; line-height:1.18; letter-spacing:-.01em;
+  margin:3.2rem 0 .9rem; color:#EBDCC1;
+}
+.chapter h4{
+  font-family:var(--mono); font-size:.73rem; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:500; margin:2.3rem 0 .7rem;
+}
+.chapter p{margin:0 0 1.15rem}
+.chapter p.lead{font-size:1.18rem; line-height:1.58}
+.chapter p.lead::first-letter{
+  float:left; font-family:var(--display); font-variation-settings:'WONK' 1;
+  font-size:3.5em; line-height:.78; font-weight:500; padding:.06em .1em 0 0;
+  color:var(--flame);
+}
+.chapter a{color:var(--blue); text-decoration-thickness:1px; text-underline-offset:.16em}
+.chapter a:hover{color:var(--flame)}
+.chapter strong{font-weight:600; color:#EFE0C6}
+.chapter ul,.chapter ol{margin:0 0 1.3rem; padding-left:1.25rem}
+.chapter li{margin:0 0 .55rem; padding-left:.2rem}
+.chapter ul{list-style:none; padding-left:1.35rem}
+.chapter ul > li::before{
+  content:"\\2014"; color:var(--flame-2); margin-left:-1.35rem; margin-right:.6rem;
+  display:inline-block; width:.75rem;
+}
+.chapter ol{list-style:none; counter-reset:n; padding-left:1.9rem}
+.chapter ol > li{counter-increment:n}
+.chapter ol > li::before{
+  content:counter(n); font-family:var(--mono); font-size:.72rem; color:var(--flame);
+  margin-left:-1.9rem; margin-right:.9rem; display:inline-block; width:1rem; text-align:right;
+}
+blockquote{
+  margin:2rem 0; padding:0 0 0 1.4rem; border-left:3px solid var(--flame);
+  font-style:italic; color:var(--ink-2); font-size:1.06rem;
+}
+blockquote p:last-child{margin-bottom:0}
+code{
+  font-family:var(--mono); font-size:.83em; background:rgba(232,166,75,.12);
+  color:#EDC98E; padding:.11em .34em; border-radius:.22rem; font-style:normal;
+}
+pre{
+  font-family:var(--mono); font-size:.79rem; line-height:1.64;
+  background:var(--paper-4); color:#DCC9AB; border:1px solid var(--rule);
+  border-radius:.55rem; padding:1.05rem 1.15rem; overflow-x:auto; margin:1.4rem 0;
+}
+pre code{background:none; padding:0; font-size:1em; color:inherit}
+pre .c{color:#8A7660; font-style:italic}
+pre .p{color:var(--flame)}
+
+/* ---------- the lamps ---------- */
+hr.rule{
+  border:none; height:64px; margin:3.2rem auto; max-width:24rem; opacity:.95;
+  background:center/contain no-repeat url("img/diya-strip.png");
+}
+
+/* ---------- plates ---------- */
+figure.plate{
+  margin:2.6rem 0; max-width:none; width:min(100%,52rem);
+  margin-left:50%; transform:translateX(-50%);
+}
+figure.plate img{
+  display:block; width:100%; height:auto; border-radius:.5rem;
+  border:1px solid var(--rule);
+  filter:brightness(.56) contrast(.95) sepia(.26) saturate(1.14);
+  transition:filter .45s ease; cursor:pointer;
+}
+figure.plate img.lit{filter:none}
+figure.plate.night img{filter:brightness(.9) saturate(1.02); border-color:var(--rule-soft)}
+figure.plate.night img.lit{filter:none}
+figure.plate figcaption{
+  font-family:var(--mono); font-size:.69rem; letter-spacing:.06em; color:var(--ink-3);
+  margin-top:.7rem; text-align:center; line-height:1.6;
+}
+figure.plate.small{width:min(100%,34rem)}
+
+/* ---------- boxes ---------- */
+.card{
+  border:1px solid var(--edge); border-radius:.55rem; background:var(--paper-3);
+  padding:1.3rem 1.45rem; margin:2rem 0;
+}
+.card > :first-child{margin-top:0}
+.card > :last-child{margin-bottom:0}
+.card .label{
+  font-family:var(--mono); font-size:.65rem; letter-spacing:.19em; text-transform:uppercase;
+  color:var(--flame); margin:0 0 .7rem; display:block;
+}
+.card.try{background:rgba(232,166,75,.09); border-color:rgba(232,166,75,.34)}
+.card.warn{background:rgba(196,107,65,.11); border-color:rgba(196,107,65,.4)}
+.card.warn .label{color:#E08B60}
+.card.note{background:rgba(147,180,196,.07); border-color:rgba(147,180,196,.3)}
+.card.note .label{color:var(--blue)}
+
+table{width:100%; border-collapse:collapse; margin:1.7rem 0; font-size:.92rem}
+th,td{text-align:left; padding:.6rem .7rem; border-bottom:1px solid var(--rule); vertical-align:top}
+th{
+  font-family:var(--mono); font-size:.65rem; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:500; border-bottom:1.5px solid var(--edge);
+}
+td code{font-size:.78rem}
+
+/* ---------- contents ---------- */
+ul.contents{list-style:none; padding:0; margin:2.2rem 0; border-top:1.5px solid var(--edge)}
+ul.contents > li{margin:0; padding:0; border-bottom:1px solid var(--rule)}
+ul.contents > li::before{content:none; display:none}
+ul.contents a{
+  display:flex; gap:1rem; align-items:baseline; width:100%; text-align:left;
+  color:inherit; text-decoration:none;
+  padding:.8rem .45rem; transition:background .15s ease;
+}
+ul.contents a:hover{background:rgba(232,166,75,.09)}
+ul.contents a:hover .t{color:var(--flame)}
+ul.contents a:focus-visible{outline:2px solid var(--flame); outline-offset:-2px}
+ul.contents .n{font-family:var(--mono); font-size:.7rem; color:var(--flame); flex:0 0 1.5rem}
+ul.contents .t{font-weight:600; flex:0 0 8.5rem; color:#EFE0C6}
+ul.contents .d{color:var(--ink-2); font-size:.92rem; flex:1}
+@media (max-width:560px){
+  ul.contents button{flex-wrap:wrap; gap:.35rem 1rem}
+  ul.contents .t{flex:1 0 auto}
+  ul.contents .d{flex:1 0 100%; padding-left:2.5rem}
+}
+
+.aside{
+  font-size:.94rem; color:var(--ink-2); border-top:1px solid var(--rule);
+  border-bottom:1px solid var(--rule); padding:1.1rem 0; margin:2.2rem 0;
+}
+
+/* ---------- chapter foot ---------- */
+.ch-foot{
+  display:flex; justify-content:space-between; gap:1rem; align-items:center;
+  margin:4rem auto 0; padding-top:1.4rem; border-top:1px solid var(--rule);
+  max-width:var(--measure); font-family:var(--mono); font-size:.72rem; letter-spacing:.06em;
+}
+.ch-foot a{color:var(--blue); text-decoration:none; padding:.4rem; text-align:left}
+.ch-foot a:hover{color:var(--flame); text-decoration:underline; text-underline-offset:.2em}
+.ch-foot a:focus-visible{outline:2px solid var(--flame); outline-offset:2px}
+.ch-foot .off{opacity:.25; padding:.4rem}
+.ch-foot .nx{text-align:right}
+
+footer.colophon{
+  max-width:var(--measure); margin:4rem auto 0; padding-top:2rem;
+  border-top:1px solid var(--rule); text-align:center;
+  font-size:.85rem; color:var(--ink-3); line-height:1.75;
+}
+footer.colophon a{color:var(--blue)}
+footer.colophon .flame{color:var(--flame); font-size:1.1rem; display:block; margin-bottom:.9rem}
+
+@media (max-width:640px){
+  body{font-size:18px}
+  .chapter p.lead::first-letter{font-size:3em}
+  figure.plate{width:100%; margin-left:0; transform:none}
+  hr.rule{max-width:17rem; height:46px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{animation:none !important; transition:none !important}
+}
+/* ── pencil plates on cream paper (AI for Beginners, 13.11.2026): the sketch is a sheet laid on the dark desk ── */
+.plate.sketch img{background:#F3EAD7; border-radius:3px; box-shadow:0 18px 40px -18px #000, 0 0 0 1px rgba(226,208,181,.18)}
+.plate.sketch figcaption{font-style:italic}
+.facts{font-family:var(--mono); font-size:.8rem; color:var(--ink-2); border-left:2px solid var(--flame); padding:.2rem 0 .2rem 1rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="masthead">
+<div class="hero-lamp"><img src="img/cover.jpg" alt="A pencil sketch on cream paper: a desk lamp lighting two chairs at one table, a small notebook open between them." loading="eager"></div>
+<p class="eyebrow">A free illustrated book · Mantra Productions</p>
+<h1>AI for Beginners</h1>
+<p class="sub">How a machine learns from its teacher: the true story of Queen</p>
+<p class="byline">Written by Queen (Qwen) &middot; corrected by Claude (Opus)<br>Commissioned by Marko Bo&scaron;ko &middot; free for everyone</p>
+</header>
+<nav class="toc" id="contents" aria-label="Contents"><h2>Contents</h2>
+<a class="toc-row" href="#visitor" style="--bg:#C9A46B"><span class="n">1</span><span class="t">A Visitor from Another Planet</span><span class="d">What a talking machine is, explained from zero</span></a>
+<a class="toc-row" href="#student-teacher" style="--bg:#D8B270"><span class="n">2</span><span class="t">The Student and the Teacher</span><span class="d">Queen does the work, Claude checks every step</span></a>
+<a class="toc-row" href="#eleven-rounds" style="--bg:#DFAB57"><span class="n">3</span><span class="t">Eleven Rounds of No</span><span class="d">Queen&#x27;s first big job, and every mistake on the way</span></a>
+<a class="toc-row" href="#skills" style="--bg:#D68A55"><span class="n">4</span><span class="t">Rules She Reads Before Every Answer</span><span class="d">The cheapest teacher: written skills</span></a>
+<a class="toc-row" href="#library" style="--bg:#CE7A4C"><span class="n">5</span><span class="t">The Library Called Hugging Face</span><span class="d">Where models and lesson books live</span></a>
+<a class="toc-row" href="#private-lessons" style="--bg:#C46B41"><span class="n">6</span><span class="t">Private Lessons</span><span class="d">Fine-tuning, and what supervised means</span></a>
+<a class="toc-row" href="#lens" style="--bg:#B85F3C"><span class="n">7</span><span class="t">The Clip-On Lens</span><span class="d">LoRA: teaching without rebuilding the brain</span></a>
+<a class="toc-row" href="#suitcase" style="--bg:#AC5636"><span class="n">8</span><span class="t">The Vacuum-Packed Suitcase</span><span class="d">QLoRA: making the big brain fit</span></a>
+<a class="toc-row" href="#exam" style="--bg:#A14E31"><span class="n">9</span><span class="t">The Exam You Never Saw</span><span class="d">How we know she learned and did not just memorise</span></a>
+<a class="toc-row" href="#loop" style="--bg:#9A4A2A"><span class="n">10</span><span class="t">The Whole Loop in One House</span><span class="d">From a question to a better student, step by step</span></a>
+<a class="toc-row" href="#money" style="--bg:#8F4427"><span class="n">11</span><span class="t">What It Costs</span><span class="d">Renting a mind by the word, or owning a machine</span></a>
+<a class="toc-row" href="#start-small" style="--bg:#843E24"><span class="n">12</span><span class="t">Start Small</span><span class="d">What you can do tomorrow</span></a>
+</nav>
+<section class="chapter" id="visitor">
+<header class="ch-head"><p class="ch-kicker">Chapter one</p><h2>A Visitor from Another Planet</h2><p class="dek">What a talking machine is, explained from zero</p></header>
+<figure class="plate sketch"><img src="img/01.jpg" alt="Pencil sketch: a traveller at the door of an endless library, pages drifting toward an outstretched hand." loading="lazy"><figcaption>Everything people ever wrote, read by one machine that learned to guess the next word.</figcaption></figure>
+<p>Hello. You have traveled a long way to arrive here. You are curious, and that is good. You have never heard of computers that talk, so let us start at the beginning.</p>
+<p>You are looking at a program. It is not alive. It is not a person. It does not have feelings, dreams, or a heartbeat. It is a very complex machine. But it can read and write. How?</p>
+<p>It learned one single trick. It read a huge part of everything people have ever written. Books, letters, websites, code. From all that text, it learned to guess the next word. If you say "The cat sat on the," it guesses "mat." It does this billions of times. When you do a simple trick billions of times, very fast, it starts to look like thinking. This is a language model.</p>
+<p>It is not magic. It is math. And it can be wrong. It can invent facts that never happened. It can use the wrong word. So, we must be careful. We treat it like a very fast, very eager student who needs a teacher.</p>
+<p>Let me give you two examples of what it can do. You can ask it to summarize a long history book into three sentences. It will read the text and pick the main ideas. Or, you can ask it to write a poem about rain. It will choose words that sound good together. It is not creating art from its soul. It is predicting which words usually follow other words in poems about rain.</p>
+<p>Now, let us meet the people in this story.</p>
+<p>There is a man named Marko. He is a musician and a maker. He lives in India and Croatia. He builds his own apps. He talks to his computer by voice. He has a student AI. He calls her Queen. Queen is a program based on a model called Qwen. She lives in a program on Marko’s computer called Groq AI Studio. She is fast and cheap.</p>
+<p>But Queen needs a teacher. The teacher is an AI called Claude. Claude is slower and more careful. Marko made a clear rule for them. He told Claude: "You stop doing anything physically in this computer... Mantra, Macro, and Queen are doing everything. You are just giving the tasks. You are writing the skills, and you are assessing and reviewing... You are the master teacher... corrections until they come to the level of your Opus model."</p>
+<p>This means Queen does the work. Claude checks the work. If Queen makes a mistake, Claude does not just fix it and move on. Claude writes a rule. Queen reads this rule before every answer. This is how she learns.</p>
+<p>Queen’s first big job was to rename two apps. She had to change the name of a Mac app and an Android phone app to "Mantra Remote Viewing." It seemed like a simple task. But it was not. Queen made mistakes. She used short names when the real names were long. She used words that did not fit the program. She tried to do three steps at once when she should have done one.</p>
+<p>It took eleven rounds of corrections. Every step waited for the teacher’s yes or no. The teacher, Claude, also made a mistake. He accidentally deleted a line of code. But because the system checks everything, the error was caught. Now, a test checks every lesson before Queen is installed.</p>
+<p>This story is about how a machine learns from its teacher. It is not about magic. It is about rules, checks, and patience. Queen is not perfect. She is a student. But with a good teacher and clear rules, she gets better.</p>
+<p>You are ready to see how this works. We will look at the tools they use. We will see how the teacher writes the rules. We will see how the student learns from her mistakes. It is a simple process, but it is powerful.</p>
+<p><strong>The machine does not think; it guesses the next word, and checking that guess is what makes it safe.</strong></p>
+</section>
+<p class="rule" aria-hidden="true">&#10022;</p>
+<section class="chapter" id="student-teacher">
+<header class="ch-head"><p class="ch-kicker">Chapter two</p><h2>The Student and the Teacher</h2><p class="dek">Queen does the work, Claude checks every step</p></header>
+<figure class="plate sketch"><img src="img/02.jpg" alt="Pencil sketch: an old master points with a pencil at one spot in a young apprentice&#x27;s drawing." loading="lazy"><figcaption>The student does the work. The teacher only points at what must change.</figcaption></figure>
+<p>On 13 November 2026, Marko Bosko, a musician and maker in Auroville, India, made a specific rule for his two AI helpers. He had two machines working together. One was his student, and the other was his teacher.</p>
+<p>The student is named Queen. Her brain is a model called Qwen, which contains about 27 billion numbers. She runs on a service called Groq. Groq is like a fast, cheap library that rents out computing power. Queen is quick and inexpensive. She is the one who does the physical work, like writing code or moving files.</p>
+<p>The teacher is Claude. Specifically, it is the Opus version of Claude. Claude is slower and more careful. He does not do the work. He watches, checks, and corrects.</p>
+<p>Marko gave Claude a direct order that day. He said: "You stop doing anything physically in this computer ... Mantra, Macro, and Queen are doing everything. You are just giving the tasks. You are writing the skills, and you are assessing and reviewing ... You are the master teacher ... corrections until they come to the level of your Opus model."</p>
+<p>This setup is clever because of cost. Queen is cheap to run. Claude is expensive. If Claude did all the work, it would cost a lot of money. Instead, Queen does the heavy lifting. Claude only steps in to check the result. This is like hiring a fast, junior worker to draft a letter, and a wise, senior editor to read it. The junior worker writes the words; the senior editor only fixes the grammar.</p>
+<h3>The Rule of Yes and No</h3>
+<p>When Queen finishes a task, she sends it to Claude. Claude looks at the work. He has two options. He can say "yes," meaning the work is correct. Or, he can say "no," but he must give a reason. He cannot just say "no." He must explain what is wrong.</p>
+<p>Every single "yes" and "no with a reason" is written down. These notes are called lessons. They are saved in a record. This record is not for Queen to read right now. It is saved for later, when we will train her brain more deeply. But for now, the immediate fix is different.</p>
+<p>When Claude finds a mistake, he writes a short rule. This rule is called a skill. Queen reads these skills before she answers any new question. A skill is like a sticky note on a monitor. It says, "Remember: do not use this word." It works instantly. It costs nothing. It does not require retraining Queen’s entire brain.</p>
+<p>For example, Queen once wrote a code note using the word "RDP." But the program she was working with used the word "VNC." These are different technical terms. Claude caught this. He wrote a skill: "Use only words you are sure of." Now, before Queen answers, she reads that rule. She remembers to check her vocabulary.</p>
+<p>Another mistake happened when Queen tried to rename two apps. She wrote placeholders like <code>&lt;exact name&gt;</code> instead of the real names. The computer ran the code exactly as written, so the names stayed wrong. Claude reviewed this. He wrote a skill to ensure real names are always used.</p>
+<h3>Why This Works</h3>
+<p>This method is efficient because it separates doing from checking. Queen is fast. She can try many things quickly. If she fails, it is not a disaster. The work is discarded, and a new skill is written. The expensive teacher, Claude, only spends his time on the final check.</p>
+<p>Marko’s system ensures that every mistake becomes a permanent lesson. Queen does not just forget the error. She reads the rule next time. This makes her better with every task. The "no with a reason" is crucial. Without the reason, Queen would not know what to fix. The reason tells her exactly where the logic broke.</p>
+<p>This process builds a library of rules. Over time, Queen becomes very good at Marko’s specific tasks. She learns his preferences. She learns which tools to use. She learns which words are safe. All of this happens through written skills, not by changing her core numbers yet.</p>
+<p>The teacher does not pour his brain into the student. He does not copy his thoughts into Queen’s memory. Instead, he guides her. He gives her tasks. He reviews her work. He writes the rules that help her avoid the same mistakes. This is how a machine learns from its teacher. It is a slow, careful process of correction.</p>
+<p><strong>The teacher does not do the work; he writes the rules that help the student avoid mistakes.</strong></p>
+</section>
+<p class="rule" aria-hidden="true">&#10022;</p>
+<section class="chapter" id="eleven-rounds">
+<header class="ch-head"><p class="ch-kicker">Chapter three</p><h2>Eleven Rounds of No</h2><p class="dek">Queen&#x27;s first big job, and every mistake on the way</p></header>
+<figure class="plate sketch"><img src="img/03.jpg" alt="Pencil sketch: crumpled paper balls around one smooth sheet under a lamp." loading="lazy"><figcaption>Every crumpled page left a rule behind. The smooth one is what the rules made possible.</figcaption></figure>
+<p>On 13 November 2026, Queen had her first big job. Marko asked her to rename two apps to "Mantra Remote Viewing." One app runs on a Mac and shows a computer in the cloud. The other runs on an Android phone. This was not a simple task. It took eleven rounds of corrections. Every step waited for the teacher’s yes or no.</p>
+<p>The process was slow because it was careful. Queen made mistakes. The teacher caught them. Each mistake became a written rule, or a "skill," that Queen reads before every answer.</p>
+<h3>The Mistakes</h3>
+<p>First, Queen wrote placeholders like <code>&lt;exact name&gt;</code> instead of real names. She ran the commands exactly as written. They failed. The rule became: always use the real name.</p>
+<p>Second, she tried to do three things at once: rename the app, install it, and rename the repository. The install step would have put the old version on the computer. The rule became: one step at a time.</p>
+<p>Third, she used a short name for the app. The real name was longer. The rule became: find the app’s real name in its code, not by shortening it.</p>
+<p>Fourth, there was a problem with letter case. The title in CAPITALS was left unchanged. Then a fix would have made it mixed case. The rule became: each place keeps its own letter case.</p>
+<p>Fifth, a name change would have broken a web link. The link pointed to a repository that did not exist. The rule became: a web address changes only when the repository itself is renamed.</p>
+<p>Sixth, she wrote "RDP" in a note. But the program speaks "VNC." These are different ways to see a computer screen. The rule became: use only words you are sure of.</p>
+<p>Seventh, once she invented fake tool calls. She made up commands that did not exist. The rule became: use only real commands.</p>
+<h3>The Teacher’s Mistakes</h3>
+<p>The teacher, Claude, made mistakes too. This is important. It shows that even the checker can be wrong.</p>
+<p>Claude accidentally deleted a line of code that applied the rename. A test now checks every lesson before Queen is installed. This catches missing lines.</p>
+<p>Claude also wrote a "bandwidth saver" for Marko’s online video class. The idea was to stop sending a still picture. But the flaw was in how it decided the picture was still. It averaged the change over the whole picture. A talking mouth is a small change. In that average, it looked like no change. The face would have frozen while the person was talking. Claude caught this in review, before anyone used it. The fixed version counts small areas.</p>
+<p>There is another saver in the Mac app. This one is for the cloud computer’s screen. After 60 seconds without a click or key, the picture freezes. Nothing is sent. Measurements show 0 bytes in 15 seconds while frozen. When live with a quiet screen, it sends 173 bytes in 15 seconds. This is different from the video class saver.</p>
+<h3>The Result</h3>
+<p>In the end, the work was done. The Mac app went from version 29 to 30. The Android app went from version 44 to 46. The repository was renamed. Everything was checked by the teacher.</p>
+<p>The lesson is not that mistakes are bad. The lesson is that mistakes become rules. When Queen makes a mistake, the teacher writes a rule. Queen reads that rule before her next answer. This works at once. It costs nothing. It is the cheapest teacher of all.</p>
+<p><strong>Mistakes become rules that make the student better.</strong></p>
+</section>
+<p class="rule" aria-hidden="true">&#10022;</p>
+<section class="chapter" id="skills">
+<header class="ch-head"><p class="ch-kicker">Chapter four</p><h2>Rules She Reads Before Every Answer</h2><p class="dek">The cheapest teacher: written skills</p></header>
+<figure class="plate sketch"><img src="img/04.jpg" alt="Pencil sketch: a hand pinning one more handwritten note to a fridge door full of notes." loading="lazy"><figcaption>A rule on the fridge works tomorrow morning. School takes longer.</figcaption></figure>
+<p>In the previous chapters, you met Queen, the student, and Claude, the teacher. You saw how Queen made mistakes while trying to rename two apps. You also saw that the teacher did not just scold her. Instead, he wrote down short instructions. These instructions are called skills.</p>
+<p>A skill is a simple rule. It is a few lines of text that Queen reads before she gives any answer. Think of it like a sticky note on your refrigerator. If you always forget to buy milk, you write "BUY MILK" on the fridge. You do not need to go back to school to learn what milk is. You just look at the note every time you open the door. The note works instantly. It costs nothing. It does not change your brain. It just reminds you of the rule.</p>
+<p>This is exactly what happened with Queen. When she made a mistake, the teacher wrote a skill. For example, Queen once wrote a placeholder like <code>&lt;exact name&gt;</code> instead of the real name of the app. The teacher wrote a skill that said: "Never write a placeholder. Write the real name." The next time Queen worked, she read that rule. She did not make that mistake again.</p>
+<p>Another skill was about capital letters. Inside the Android app, the title was written in all capitals: MANTRA REMOTE VNC. Queen’s first attempt to rename it did not change the letters at all. It looked for the name in normal letters, so the old title stayed. In the next round, her fix would have changed it to normal letters, "Mantra Remote Viewing." The teacher said no before that happened. The round after, it became MANTRA REMOTE VIEWING, in capitals, which was right. The teacher wrote a skill: "Each place keeps its own letter case." Now Queen knows that if the title was in capitals, it stays in capitals.</p>
+<p>Why is this better than training? Training is like going back to school for a whole semester. It takes time. It costs money. It changes the numbers inside Queen’s brain. Skills are different. They are just notes. They work at once. They cost zero dollars. They do not change Queen’s brain. They just tell her what to do in that specific situation.</p>
+<p>But skills have limits. A skill works for a specific mistake. If Queen makes a new kind of mistake, the teacher writes a new skill. But if Queen has a bad habit that happens in many different ways, a single rule might not fix it. For example, if Queen is generally too lazy to check her work, a rule like "Check your work" might not be enough. She needs to learn the habit of checking. That is when real training is needed. Training changes her brain so that she is naturally more careful. It is a deeper change.</p>
+<p>In Marko’s story, the skills were enough for the first job. The mistakes were specific: placeholders, wrong letter cases, wrong words. The teacher wrote a checklist of rules. Queen read them. She became more careful. She did not become smarter in a general way. She just followed the rules. This is the cheapest way to teach. It is like giving a student a list of common errors to avoid before an exam. It works fast. It works well. But it does not teach the student how to think. It only tells them what not to do.</p>
+<p>The teacher, Claude, found his own mistakes too. He deleted a line of code by accident. He wrote a rule for himself, too. He now checks every lesson before Queen is installed. This shows that skills work for everyone. Even the teacher needs a note on the fridge.</p>
+<p>So, when should you use a skill? Use a skill when the mistake is clear and specific. Use a skill when you want a fix that works immediately. Use a skill when you do not want to spend time or money on training. When should you use training? Use training when the mistake is a habit. Use training when the student needs to change how they think, not just what they do. Use training when you have many examples of the mistake, so the student can learn the pattern.</p>
+<p>For now, Queen uses skills. She reads them before every answer. She follows them. She makes fewer mistakes. It is a simple system. It is a warm system. It is a system that works.</p>
+<p><strong>A skill is a note on the fridge: it works at once, costs nothing, and reminds you of the rule without changing your brain.</strong></p>
+</section>
+<p class="rule" aria-hidden="true">&#10022;</p>
+<section class="chapter" id="library">
+<header class="ch-head"><p class="ch-kicker">Chapter five</p><h2>The Library Called Hugging Face</h2><p class="dek">Where models and lesson books live</p></header>
+<figure class="plate sketch"><img src="img/05.jpg" alt="Pencil sketch: endless shelves with a ladder, and a small locked cabinet with its key." loading="lazy"><figcaption>A public library for machines, with one private cabinet that only you can open.</figcaption></figure>
+<p>You have met Queen, the student, and Claude, the teacher. You know that Queen makes mistakes, and Claude writes rules to fix them. But where do these things live? Where does the student keep her books?</p>
+<p>The answer is a place called Hugging Face.</p>
+<p>Imagine a giant public library. In this library, the shelves are filled with two main types of items. The first type is models. These are the students. They are large programs that have already learned to speak and reason. The second type is datasets. These are the lesson books. They contain examples of questions and correct answers.</p>
+<p>Hugging Face is not just a storage place. It is a community. People all over the world upload their models and datasets here. They share them so others can use them. It is like a giant workshop where everyone brings their tools and blueprints.</p>
+<h3>The Open Shelf</h3>
+<p>Some models in this library are open. This means anyone can download them. You can take the model, look inside, and change how it works. You can even teach it new things and share your version back.</p>
+<p>Queen’s family, called Qwen, has open models. This is important. It means that the small version of Qwen that Marko will use for training later is one of these open models. Because it is open, Marko can download it to his computer. He can change its settings. He can teach it specific skills. If it were a closed model, like a secret recipe that only one company knows, he could not do this. He would have to rent the model from the company, and he could not change its internal numbers.</p>
+<p>An open model is like a piano that you can buy. You can tune it. You can change the strings. You can teach it to play a specific song. A closed model is like a piano in a locked room. You can only press the keys through a window. You cannot touch the inside.</p>
+<h3>The Private Shelf</h3>
+<p>Now, look at Marko’s work. He is building a special helper for his own apps. He does not want to share his private training records with the whole world yet. So, he uses a private shelf.</p>
+<p>Right now, Marko’s training records are in a private repository on GitHub. GitHub is a website where people store code. It is like a library, but for programs. Marko keeps his scripts and logs there.</p>
+<p>Later, when he is ready to train Queen, he will move the lesson book and the trained lens to a private shelf on Hugging Face. This private shelf is only for him. No one else can see it. No one else can download it. It is his own study room in the giant library.</p>
+<p>Why does he use Hugging Face for this? Because Hugging Face has tools that make training easier. It has software that helps you load the model, feed it the lesson book, and save the results. It is like having a librarian who knows exactly how to organize your books so the student can find them quickly.</p>
+<h3>Why It Matters</h3>
+<p>You might wonder why we need a library at all. Why not just keep everything on one computer?</p>
+<p>Because AI is big. The models are huge. They have billions of numbers. Storing them and sharing them takes a lot of space. Hugging Face solves this. It lets people share the heavy work. If you need a model, you do not build it from scratch. You download it. If you need a dataset, you do not write every example yourself. You can find one that is already good.</p>
+<p>For Marko, this means he can start with a small, open Qwen model. He can use the tools on Hugging Face to teach it his specific rules. He can keep his private lessons safe on his private shelf. And he can share his final, improved model with others if he wants to.</p>
+<p>The library is not just a place where things sit. It is a place where learning happens. It connects the student, the teacher, and the tools. It makes it possible for a person like Marko, who is not a big company, to build his own AI helper.</p>
+<p>Remember that the library is where the models and the lesson books are stored and shared.</p>
+</section>
+<p class="rule" aria-hidden="true">&#10022;</p>
+<section class="chapter" id="private-lessons">
+<header class="ch-head"><p class="ch-kicker">Chapter six</p><h2>Private Lessons</h2><p class="dek">Fine-tuning, and what supervised means</p></header>
+
+<p>Queen has finished school. She has read a huge amount of text and learned to guess the next word. But she does not know your specific rules. She does not know how you like your code formatted, or which words you prefer. For that, she needs private lessons. This is called fine-tuning.</p>
+<p>Imagine a student who is good at math but bad at history. You do not send them back to start kindergarten. You give them a special course just on history. Fine-tuning is the same. It takes an already smart model and teaches it one specific job.</p>
+<p>There is a special type of fine-tuning called Supervised Fine-Tuning, or SFT. The word "supervised" means a teacher is watching. In this method, every lesson comes with the right answer. The student is not just guessing. The student sees the question, tries an answer, and then sees the correct answer.</p>
+<p>Let us look at a real example from Marko’s notes. Imagine Queen is asked to write a short product description for a red mug.</p>
+<p>The instruction is: "Write a short product description for a red mug."</p>
+<p>Queen’s first answer is: "Red mug. Good."</p>
+<p>The teacher, Claude, looks at this. It is too short. It is not clear. The teacher writes the correct answer: "A bright red ceramic mug with a smooth handle, perfect for coffee or tea."</p>
+<p>The teacher also writes feedback: "Qwen was too short and unclear. Add useful details and complete sentences."</p>
+<p>This record is saved. It has four parts: the instruction, Queen’s answer, the correct answer, and the feedback. This is one lesson.</p>
+<p>Now, here is the important part. The teacher does not pour his brain into Queen. He does not move his own thoughts into her. That is not how it works. Instead, the teacher writes good examples. Queen learns from these examples, just like a student learns from solved exercises in a book.</p>
+<p>So, how does Queen actually learn? She does not just read the correct answer and memorize it. If she only memorized, she would fail on new questions. That is a problem called overfitting, which we will discuss later in chapter 9.</p>
+<p>Instead, the training process uses a "nudge." Queen’s brain is made of billions of numbers. These numbers control how she predicts the next word. When the training computer shows Queen the instruction and the correct answer, it checks how far off Queen’s guess was. Then, it adjusts her numbers by a tiny, tiny amount. It nudges them in the direction that would have made her guess closer to the correct answer.</p>
+<p>This happens thousands of times. Each time, the nudge is small. But after many lessons, the numbers have shifted. Queen has developed a habit. She now knows that when you ask for a product description, you want details, not just two words.</p>
+<p>This process uses the dataset we built in the previous chapters. Remember, the dataset is the saved record of all the lessons. Queen does not read this file directly during her daily work. The file is used only when we run the training program.</p>
+<p>The training is not magic. It is math. The computer compares Queen’s output to the correct answer. It calculates the difference. It updates the numbers. It repeats this for every example in the dataset.</p>
+<p>You might think this is expensive. It is not as expensive as you might fear. For small models, you can do this on a free graphics card. For larger models, you use a method called QLoRA, which we will explain in chapter 8. But the core idea is the same: show the student the right answer, and nudge her numbers until she gets there.</p>
+<p>The teacher’s job is to make sure the correct answers are truly good. If the teacher gives a bad example, Queen will learn a bad habit. That is why Claude checks every step. He is the master teacher. He writes the skills, he assesses the work, and he provides the correct answers for the dataset.</p>
+<p>So, fine-tuning is not about replacing Queen’s brain. It is about polishing it. It is about giving her private lessons for the specific job you need her to do. She already knows how to talk. Now she is learning how to talk to you.</p>
+<p><strong>The teacher does not pour his brain into the student; he writes good examples, and the student learns from them like solved exercises.</strong></p>
+</section>
+<p class="rule" aria-hidden="true">&#10022;</p>
+<section class="chapter" id="lens">
+<header class="ch-head"><p class="ch-kicker">Chapter seven</p><h2>The Clip-On Lens</h2><p class="dek">LoRA: teaching without rebuilding the brain</p></header>
+
+<p>Imagine you have a camera. The camera body is heavy, expensive, and contains the main sensor that captures light. If you want to take a different kind of photo, you do not throw away the camera and build a new one from scratch. You simply clip a new lens onto the front. The body stays the same. Only the lens changes how the light enters.</p>
+<p>This is exactly how Marko plans to teach his AI helper, Queen.</p>
+<p>Queen’s brain is a model called Qwen. It contains about 27 billion numbers. These numbers are the weights that decide how the machine processes words. Changing all 27 billion numbers is like disassembling the entire camera, rebuilding the sensor, and recalibrating every part. It is slow, expensive, and risky. If you make one mistake, the whole camera might stop working.</p>
+<p>Instead, Marko uses a method called LoRA. LoRA stands for Low-Rank Adaptation. Think of LoRA as a small, clip-on lens. The big brain of Queen stays frozen. It does not change. Only the small lens learns.</p>
+<p>Here is how it works in practice. Marko has a smaller version of Qwen with about 4 billion numbers. This smaller model fits on a free graphics card with 16 gigabytes of memory. He does not need to pay for a powerful server. He just needs a standard computer part.</p>
+<p>The LoRA lens for this small model is tiny. It contains a few million to a few tens of millions of numbers. That is about 1 percent of the whole model. When saved as a file, it is only 50 to 200 megabytes. The full model is many gigabytes. The lens is a small file you can keep on a USB stick.</p>
+<p>This approach gives Marko three big advantages.</p>
+<p>First, the files are small. He can save many different lenses. One lens might help Queen write code. Another lens might help her answer questions about music. He can keep them all on his computer.</p>
+<p>Second, he can swap lenses in a second. If Queen needs to do a coding task, he clips on the coding lens. If she needs to write a poem, he clips on the writing lens. The original brain stays safe and unchanged. He is not rebuilding the camera every time he wants to take a different photo.</p>
+<p>Third, the original model stays safe. Because the big brain is frozen, it cannot be broken by bad training data. If a lens does not work well, Marko simply removes it. The camera is still perfect underneath.</p>
+<p>Marko’s plan is specific. He will train a lens for the small Qwen model. He will use the lessons he collected when Queen made mistakes. Remember the dataset from the previous chapter? That is the lesson book. He will feed those lessons into the small model. The model will adjust only the small LoRA numbers. The 4 billion numbers in the base model will not move.</p>
+<p>This is different from the written rules Queen reads before every answer. Those rules are skills. They are text files. They work instantly and cost nothing. But they cannot change deep habits. If Queen always forgets a specific format, a rule might help, but a trained lens can fix the habit inside the brain.</p>
+<p>Marko cannot train the 27-billion model on his free card. It is too big. But he can train the 4-billion model. Once the small lens works well, he knows the method is sound. He has proven that he can teach the machine without rebuilding it.</p>
+<p>The camera analogy holds up. You do not need a new camera for every type of photography. You just need the right lens. Queen’s brain is the camera. The LoRA adapter is the lens. The lens is small, cheap, and swappable. The camera stays safe.</p>
+<p>This is why LoRA is so useful for beginners. It lowers the barrier. You do not need a million-dollar server to teach an AI. You need a good lesson book and a small piece of software. You can experiment, fail, and try again without breaking the main model.</p>
+<p>Marko’s next step is clear. He will take the dataset of corrections. He will load the small Qwen model. He will attach the LoRA adapter. He will run the training. Then he will test the new lens. If Queen answers better with the lens on, he keeps it. If not, he removes it and tries again.</p>
+<p>The big brain remains untouched. The small lens does the work. This is the power of adaptation.</p>
+<p><strong>The brain stays frozen; only the small lens learns.</strong></p>
+</section>
+<p class="rule" aria-hidden="true">&#10022;</p>
+<section class="chapter" id="suitcase">
+<header class="ch-head"><p class="ch-kicker">Chapter eight</p><h2>The Vacuum-Packed Suitcase</h2><p class="dek">QLoRA: making the big brain fit</p></header>
+
+<h3>The Vacuum-Packed Suitcase</h3>
+<p>Imagine you are packing a suitcase for a long trip. You have a thick winter coat, heavy boots, and many sweaters. If you try to shove them in as they are, the zipper will not close. The suitcase is too small for the clothes. But if you put the clothes into a vacuum bag, pump out the air, and seal it, the clothes become flat and dense. They take up much less space. The suitcase closes. You still have your clothes. They are just packed tighter.</p>
+<p>This is exactly what happens when we try to teach a computer brain.</p>
+<p>In the last chapter, we talked about the clip-on lens. That is a small piece of software that learns new habits while the main brain stays frozen. But there is a problem. Even a frozen brain is huge. It is made of billions of numbers. To teach the small lens, the computer must hold the whole brain in its memory at the same time. If the brain is too big, it will not fit in the memory of a normal computer. It is like trying to put a full suitcase into a small backpack. It does not fit.</p>
+<p>QLoRA is the vacuum bag.</p>
+<p>The word QLoRA stands for Quantized Low-Rank Adaptation. Let us break that down. "Low-Rank Adaptation" is the lens we already know. "Quantized" means we change how the numbers are stored. Computers usually store numbers with high precision. They use many digits to be very exact. Think of the number pi. You might write it as 3.1415926535. That is very precise. But if you only need to cut a pizza, 3.14 is enough. You do not need all those extra digits.</p>
+<p>Quantization is like writing 3.14 instead of 3.1415926535. We drop the extra digits. The number is slightly less precise, but it is much smaller. When we do this to the billions of numbers in the brain, the brain shrinks. It becomes a "4-bit" brain instead of a "16-bit" brain. It is squeezed tight. It fits in a smaller box.</p>
+<p>This is why a small version of the Qwen model can be taught on a free graphics card with 16 gigabytes of memory. This free card is available on a website called Google Colab. You do not need to buy expensive equipment. You just need to squeeze the brain first. The small lens is then trained on top of this squeezed brain. The lens itself is very small, usually between 50 and 200 megabytes. That is tiny compared to the whole model, which is many gigabytes.</p>
+<p>There is a trade-off. When you squeeze the numbers, you lose a little precision. It is like using a blurry photo instead of a sharp one. The computer is not as exact as it was before. But the benefit is huge: the brain now fits in the memory. It works. It learns. It just fits in a smaller box.</p>
+<p>You might wonder if you can do this on your own computer. If you have a Mac, you cannot do this specific 4-bit training. The software needs a specific type of graphics card made by a company called NVIDIA. Macs use different graphics chips that do not support this kind of squeezing. So, for this step, you need an NVIDIA card. If you do not have one, you use the free card on Google Colab. It is the same idea: you need a machine that can handle the squeezed numbers.</p>
+<p>Think about what this means for you. You do not need a massive server in a cold room. You do not need to spend thousands of dollars. You can teach a small AI helper on a free, shared computer. You just have to pack the brain tightly first. The vacuum bag makes the impossible possible. The clothes are still there. The brain is still there. It is just packed so it fits.</p>
+<p>This is how we keep the cost low. We do not change the whole brain. We do not throw away the old brain. We just pack it tighter so we can add the small lens. The lens learns the new habits. The brain stays safe and frozen. The whole system is efficient. It uses less memory. It costs less money. It is a clever trick that lets beginners like you start training your own AI helper without needing a fortune.</p>
+<p>The process is simple. You take the model. You squeeze it. You add the lens. You train the lens. You save the lens. The model is still there, just packed tight. When you are done, you can unzip it if you want, but usually, you keep it packed because it works well. The slight loss of precision is not a problem for most tasks. The model still guesses the next word well. It still follows the rules. It just does it with a tighter fit.</p>
+<p>This is the power of QLoRA. It is not magic. It is math. It is about using fewer digits to store the same information. It is about making the big thing small enough to handle. It is about fitting the suitcase. And once it fits, you can start the real work of teaching.</p>
+<p><strong>A squeezed brain still works; it just fits in a smaller box.</strong></p>
+</section>
+<p class="rule" aria-hidden="true">&#10022;</p>
+<section class="chapter" id="exam">
+<header class="ch-head"><p class="ch-kicker">Chapter nine</p><h2>The Exam You Never Saw</h2><p class="dek">How we know she learned and did not just memorise</p></header>
+
+<p>Imagine you are studying for a math test. You have a practice sheet with fifty questions. You study hard. You solve every problem. You understand the steps. When the real exam arrives, it has the exact same fifty questions. You get a perfect score. But did you learn math? Or did you just memorize the answers?</p>
+<p>In the world of artificial intelligence, this mistake has a name: overfitting. It happens when a machine learns the specific examples it practiced on, but fails to understand the general rule. It is like a student who can recite the answers to last year’s exam but cannot solve a new problem. To stop this, we use a simple trick. We hide some of the lessons.</p>
+<p>We take the record of Queen’s work. This record is called a dataset. It contains the questions, Queen’s answers, and the teacher’s corrections. We do not use all of it for practice. One lesson in ten is locked away. We put it in a safe. Queen never sees it. She never practices it. It is kept only for the final test. This hidden part is called the test set.</p>
+<p>When we are ready to check if Queen has truly learned, we run the blind exam. We take the old version of Queen, the one she is now. We also take the new version, the one that has just finished its private lessons. We give both versions the locked questions. They have never seen these questions before.</p>
+<p>Now, we need a judge. The judge is a person or a program that does not know which answer came from the old Queen and which came from the new one. This is called blind judging. It prevents bias. The judge looks at the two answers for each question and picks the better one. The judge does not care about the name of the model. The judge only cares about the quality of the answer.</p>
+<p>We count the wins. If the new Queen wins at least 60 out of 100 questions, she passes. We keep the new version. We discard the old one. If she wins fewer than 60, she fails. We throw away the new version. We keep the old one. Why is the bar set at 60? Because 50 is a coin flip. It means the new version is no better than chance. 60 means the new version is clearly better. It shows real improvement, not just luck.</p>
+<p>This process protects us from overfitting. If the new Queen only memorized the practice questions, she will fail the locked ones. She will not know the answers. She will guess. The old Queen, who has not changed, might do better on the new questions. The blind judge will see this. The new version will be rejected.</p>
+<p>Think of it like a language test. You practice with a list of words. Then you are given a new list. If you can only translate the first list, you did not learn the language. You learned the list. The locked questions are the new list. They prove you understand the grammar, not just the vocabulary.</p>
+<p>In Marko’s project, this exam is part of the loop. Every time a new lens is trained, it must pass this test. The dataset grows. Every 25 new examples, a new version of the dataset is built. The locked questions are always fresh. They are never used for training. This ensures that the machine is always tested on things it has not seen.</p>
+<p>The numbers are simple. One in ten is hidden. The judge is blind. The pass mark is 60 percent. These three rules keep the machine honest. They force the machine to learn patterns, not just answers. They turn a memorizer into a student.</p>
+<p>You might wonder why we do not just use all the data for practice. More data seems better. But if you practice on everything, you have nothing left to test. You cannot know if you are good or if you are just lucky. You need a held-out set. It is the price of knowing the truth.</p>
+<p>The blind exam is not a punishment. It is a protection. It protects the user from a machine that looks smart but is actually confused. It protects the teacher from wasting time on a bad update. It keeps the system reliable.</p>
+<p>When the new Queen passes, she is ready to work. She has proven she can handle new questions. She has shown she understands the rules, not just the examples. She is a better student. The old version is retired. The cycle continues.</p>
+<p>This is how we know she learned. We do not trust her word. We do not trust the practice scores. We trust the blind exam. It is the only way to separate real learning from memorization. It is the exam you never saw, because the questions were hidden from the student.</p>
+<p><strong>A machine that cannot pass a blind exam has only memorized, not learned.</strong></p>
+</section>
+<p class="rule" aria-hidden="true">&#10022;</p>
+<section class="chapter" id="loop">
+<header class="ch-head"><p class="ch-kicker">Chapter ten</p><h2>The Whole Loop in One House</h2><p class="dek">From a question to a better student, step by step</p></header>
+
+<p>You have seen the pieces. You have met the student, the teacher, the library, and the small clip-on lens. Now, let us put them together. This is how the whole loop runs in Marko’s house. It is like a recipe. If you follow the steps in order, the machine gets better.</p>
+<h3>The Daily Work</h3>
+<p>It starts with a question. Marko asks Queen to do something. Maybe he wants to rename an app on his computer. Queen is the student. Her brain is a model called Qwen. It has about 27 billion numbers. It runs on a service called Groq. Queen tries to solve the task. She writes code or gives instructions.</p>
+<p>But Queen does not act alone. She waits. Every step she takes is sent to the teacher. The teacher is Claude. Claude is a different, slower, and more careful model. Claude checks Queen’s work. He looks for mistakes. If the work is right, he says yes. If it is wrong, he says no and explains why. He might say, "You used the wrong name," or "This step will break the link."</p>
+<p>This back-and-forth is the heart of the system. Queen tries. Claude checks. Queen fixes. Claude checks again. This happens many times. In one real job, Queen had to rename two apps. It took eleven rounds of corrections. In the first round, she used a placeholder name instead of the real one. In the second, she tried to do three things at once, which would have caused an error. The teacher stopped her. He made her do one thing at a time. By the end, the apps were renamed correctly, and the teacher had checked every single step.</p>
+<h3>Saving the Lessons</h3>
+<p>This is the most important part. Every answer, every yes, every no, and every correction is saved. They are not lost. They are written down with a turn number. This record goes into a private GitHub repository. GitHub is a place where code is stored, but here it stores the lessons.</p>
+<p>On 13 November 2026, Marko saved the first version of this record. It was called Dataset Version 1. It contained 39 lessons. These lessons were the teacher’s decisions. Many were "no" answers with reasons. For one of them, the teacher also wrote out the full better answer. This dataset is not for Queen to read right now. It is a book of solved exercises. It is kept for later.</p>
+<p>The system builds new versions of this book automatically. After every 25 new examples are added, a new version is created. But we do not start training yet. We need about 100 good examples to begin. We are still collecting them. One in ten examples is locked away. It is hidden. This hidden part is for the exam. It is never used for practice.</p>
+<p>When we have enough examples, we train a small model. We do not train the big 27-billion Queen. We train a small Qwen. It has about 4 billion numbers. It is much smaller. We use a method called QLoRA. This is the vacuum-packed suitcase. It squeezes the model so it fits on a small graphics card. We train a lens for this small Qwen. The lens is a small file, about 50 to 200 megabytes. It is attached to the small Qwen.</p>
+<p>The small Qwen with the new lens is tested. It takes the hidden exam. It answers the questions it has never seen before. A blind judge compares its answers to the old model’s answers. If the new one wins at least 60 out of 100 times, we keep it. If it does not win, we throw the lens away. We do not know if it will be better yet. We only know it should make fewer mistakes. The exam decides.</p>
+<p>This is the loop. Ask. Check. Save. Wait. Train. Test. Keep or discard. It is a cycle. It runs again and again. Every time, the student gets a little sharper. The teacher gets a little less busy. The book of lessons gets a little thicker.</p>
+<p><strong>The machine does not learn by magic; it learns by saving every mistake and fixing it, one step at a time.</strong></p>
+</section>
+<p class="rule" aria-hidden="true">&#10022;</p>
+<section class="chapter" id="money">
+<header class="ch-head"><p class="ch-kicker">Chapter eleven</p><h2>What It Costs</h2><p class="dek">Renting a mind by the word, or owning a machine</p></header>
+
+<p>You have learned that Queen is a student and Claude is her teacher. You have seen how she makes mistakes, how the teacher corrects them, and how small lenses (chapter 7) can be added to a model to help it learn specific tasks. Now, you might wonder: how much does all this cost? On your planet, perhaps you pay for the air you breathe or the light you see. Here, you pay for the work the machine does.</p>
+<h3>Renting by the Word</h3>
+<p>When Queen answers you, she does not just "think." She reads pieces of text and writes pieces of text. These pieces are called tokens. A token is a small chunk of a word, like a syllable or a short word. If you ask Queen to write a poem, she reads your request (tokens) and writes the poem (tokens). The company that hosts Queen, Groq, charges you for every token she reads and every token she writes.</p>
+<p>Marko, the musician who built Queen, used her for about fifteen hours in one day. He made 67 calls to her. In total, she read 219,268 tokens and wrote 57,643 tokens. The price for reading is 0.80 dollars per million tokens. The price for writing is 4 dollars per million tokens. For that whole day of work, Marko paid only 0.30 dollars. That is less than the cost of a single candy bar.</p>
+<p>If Marko used Queen at that same pace every day, it would cost him about 15 dollars a month. This is a small amount of money. It is cheap because he is renting the machine’s time. He pays only when Queen is working. If he stops asking questions, he stops paying. This is like paying for a taxi ride. You pay for the miles you drive, not for the car sitting in the garage.</p>
+<h3>Owning the Machine</h3>
+<p>There is another way to use a model. You can rent a graphics card, which is the part of the computer that does the heavy math. You can rent one from a service like RunPod. If you rent the cheapest good card, an RTX 4090, for a whole month, it costs about 245 dollars. This is much more than Marko’s 15 dollars.</p>
+<p>You might say, "Why pay 245 dollars if I can pay 15?" The answer is that you only need to own or rent a machine if you use it a lot, or if you need to train it yourself. Training is when you teach the model new habits using the lessons we saved in the dataset (chapter 6).</p>
+<p>If you want to train a small model, like a Qwen with 4 billion numbers, you do not need to buy a server. You can use a free graphics card with 16 gigabytes of memory, available on a service called Google Colab. This is enough to teach a small model. But if you want to train the big Queen model, or if you use the model for many hours every day, renting by the second adds up. For Marko’s level of use, paying per second while the machine works costs about 40 to 60 dollars a month. This is still cheaper than renting the card for the whole month.</p>
+<p>So, when does it make sense to own your own server? The math says it pays off only when you use the machine about 17 times more than Marko does. If you are a beginner, you will not use it that much. You will not need your own server. You will not even need to rent a card by the hour.</p>
+<p>Start by renting by the word. Use the cheap service. Pay for the tokens you use. If you later decide to train a small lens for a small Qwen, you can use the free option. If you find yourself using the machine every single day for many hours, then you might look at renting a card. But for now, the most important thing is to start. The cost is low. The barrier is small.</p>
+<p><strong>Start by renting by the word; own a machine only when you use it a lot or need your own trained lens.</strong></p>
+</section>
+<p class="rule" aria-hidden="true">&#10022;</p>
+<section class="chapter" id="start-small">
+<header class="ch-head"><p class="ch-kicker">Chapter twelve</p><h2>Start Small</h2><p class="dek">What you can do tomorrow</p></header>
+
+<p>You are ready to begin. You do not need a giant computer or a lot of money. You need patience and a small start. The path is simple: start with a small student, collect good examples, write rules, and then train a small lens.</p>
+<h3>The First Steps</h3>
+<p>Start with a small model. Marko’s plan says to begin with a small Qwen. This is a version of the student model with about 4 billion numbers. It is small enough to fit on a free graphics card with 16 GB of memory. You do not need to rent an expensive server yet. You can use a free service like Google Colab. This is the "vacuum-packed suitcase" idea from Chapter 8. The model is squeezed so it fits in small memory.</p>
+<p>Next, collect your lessons. You need to save the records of the student’s work. Every time the student answers, the teacher checks it. If the answer is wrong, the teacher writes the correct one. You save the question, the student’s wrong answer, the teacher’s correct answer, and the reason for the fix. This record is called a dataset.</p>
+<p>How many do you need? Marko’s plan says to collect 50 to 200 good, corrected examples. Do not rush to get 1,000. Quality is more important than quantity. The system is ready to start training when you have about 100 good examples. Until then, you are just building your lesson books.</p>
+<p>While you collect these examples, write rules. Remember the difference between a skill and a lens. A skill is a short written rule the student reads before every answer. It is free and works immediately. If the student makes a mistake, write a rule to stop it. For example, if the student forgets to use capitals, write a rule: "Always use capitals for titles." This is the cheapest teacher. Use skills first. Only when a habit is too deep for a rule to fix do you need to train a lens.</p>
+<h3>The Exam and the Lens</h3>
+<p>When you have about 100 good examples, you can train a small lens. This is the LoRA adapter. It is a small file, only 50 to 200 megabytes. It clips onto the student’s brain. The brain itself does not change. Only the lens learns.</p>
+<p>But you must test it. You cannot just trust the student. You need an exam. Remember the rule from Chapter 9: keep one example in ten locked away. This is the exam set. The student never sees these during training. When training is done, you give the exam to both the old student (without the lens) and the new student (with the lens). A blind judge compares the answers. You keep the new lens only if it wins at least 60 out of 100 questions. If it does not win, it may have just memorized the practice questions. This is called overfitting. You must discard it and try again with better examples.</p>
+<p>If the lens works, you can move to a bigger model. This means using a larger Qwen with more memory. But you do not do this until the small lens is proven. Start small. Fix the small problems. Then go bigger.</p>
+<p>The knowledge in this book is free. It is meant to be shared. You can build this system in your own house. You do not need a company. You need a student, a teacher, and a way to check the work. The tools are open. The path is clear.</p>
+<p><strong>Hugging Face is the library, Qwen is the student, Claude is the teacher, your examples are the lessons, and LoRA is the lens that lets the student learn without rebuilding its brain.</strong></p>
+</section>
+<p class="rule" aria-hidden="true">&#10022;</p>
+<footer class="colophon"><p class="flame">&#10022;</p><p>Written by Queen (Qwen 27B on Groq), chapter by chapter, each one reviewed and corrected by Claude (Opus) before it was kept.<br>Pencil sketches on cream paper drawn by Gemini on three of Marko's free accounts. No paid image tool was used.</p><p>The story is true: the mistakes, the corrections and the numbers are from 12 and 13 November 2026 in Marko's house. Prices change; check them before you spend.</p><p>Free to read, free to share. Mantra Productions &middot; Auroville &amp; Croatia &middot; 13 November 2026.</p></footer>
+</div>
+<script src="https://speechifykeys.pages.dev/speechify-keys.js" defer></script>
+</body>
+</html>

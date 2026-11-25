@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://ai-for-beginners-book.pages.dev/sitemap.txt
+Sitemap: https://ai-for-beginners.markobosko.org/sitemap.txt
